@@ -7,15 +7,29 @@ from PIL import Image
 import pdf2image
 import google.generativeai as genai
 
+# Load environment variables from .env file
 load_dotenv()
 
+# Configure the Gemini API
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# Function to get Gemini API response
-def get_gemini_response(input, pdf_content, prompt):
-    model = genai.GenerativeModel('gemini-pro-vision')
-    response = model.generate_content([input, pdf_content[0], prompt])
-    return response.text
+# In-memory user database for demo purposes
+user_db = {}
+
+# Function to register a user
+def register_user(email, password):
+    if email in user_db:
+        return "Email already exists!"
+    user_db[email] = password
+    return "Registration successful!"
+
+# Function to log in a user
+def login_user(email, password):
+    if email not in user_db:
+        return "Email not found!"
+    if user_db[email] != password:
+        return "Incorrect password!"
+    return "Login successful!"
 
 # Function to handle PDF file conversion to images
 def input_pdf_setup(uploaded_file):
@@ -37,6 +51,12 @@ def input_pdf_setup(uploaded_file):
         return pdf_parts
     else:
         raise FileNotFoundError("No file uploaded")
+
+# Function to get Gemini API response
+def get_gemini_response(input, pdf_content, prompt):
+    model = genai.GenerativeModel('gemini-pro-vision')
+    response = model.generate_content([input, pdf_content[0], prompt])
+    return response.text
 
 # Employee (User) Page - Resume Checker
 def employee_page():
@@ -113,16 +133,83 @@ def organization_page():
         else:
             st.warning("Please fill in all fields to generate the JD.")
 
-# Login Page to select Employee or Organization role
+# Login and Registration Page
 def login_page():
     st.title("Welcome to ATS & JD Generator")
-    role = st.radio("Select Your Role", ["Employee", "Organization"])
 
-    # Redirect based on selected role
-    if role == "Employee":
-        employee_page()
-    elif role == "Organization":
-        organization_page()
+    # Allow users to choose between login and registration
+    page = st.radio("Choose an option", ["Login", "Register"])
 
-# Start with the login page
-login_page()
+    if page == "Register":
+        st.subheader("Create a new account")
+
+        # Registration form
+        email = st.text_input("Email")
+        password = st.text_input("Password", type='password')
+        confirm_password = st.text_input("Confirm Password", type='password')
+
+        if st.button("Register"):
+            if password != confirm_password:
+                st.error("Passwords do not match!")
+            elif not email or not password:
+                st.error("Please fill in all fields!")
+            else:
+                result = register_user(email, password)
+                st.success(result)
+                # Set session state to indicate successful registration
+                st.session_state.logged_in = True
+                st.session_state.email = email
+                st.session_state.role = None
+                # Redirect to role selection
+                role_selection()
+
+    elif page == "Login":
+        st.subheader("Login to your account")
+
+        # Login form
+        email = st.text_input("Email")
+        password = st.text_input("Password", type='password')
+
+        if st.button("Login"):
+            if not email or not password:
+                st.error("Please fill in both fields!")
+            else:
+                result = login_user(email, password)
+                if result == "Login successful!":
+                    st.success(result)
+                    # Set session state to indicate successful login
+                    st.session_state.logged_in = True
+                    st.session_state.email = email
+                    st.session_state.role = None
+                    # Redirect to role selection
+                    role_selection()
+                else:
+                    st.error(result)
+
+# Role Selection after successful login or registration
+def role_selection():
+    if st.session_state.logged_in:
+        email = st.session_state.email
+        role = st.radio(f"Welcome {email}! Please select your role", ["Employee", "Organization"])
+
+        # Save role in session state
+        st.session_state.role = role
+
+        if role == "Employee":
+            employee_page()
+        elif role == "Organization":
+            organization_page()
+
+# Main entry point of the app
+def main():
+    # Check if the user is already logged in
+    if 'logged_in' not in st.session_state or not st.session_state.logged_in:
+        # If not logged in, show the login page
+        login_page()
+    else:
+        # If logged in, show role selection
+        role_selection()
+
+# Run the app
+if __name__ == "__main__":
+    main()
