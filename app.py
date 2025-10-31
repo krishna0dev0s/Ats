@@ -11,7 +11,7 @@ import google.generativeai as genai
 # --------------------------
 
 st.sidebar.title("🔑 Gemini API Configuration")
-user_api_key = st.sidebar.text_input("Enter your Gemini API Key", type="password")
+user_api_key = st.sidebar.text_input("AIzaSyCxzV0CnE70klTY_YPcBDyYyi396TQWWRc", type="password")
 
 # Save API key
 if st.sidebar.button("Save API Key"):
