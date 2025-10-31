@@ -7,11 +7,11 @@ import pdf2image
 import google.generativeai as genai
 
 # --------------------------
-# 🔑 GEMINI API CONFIGURATION (No .env required)
+# 🔑 GEMINI API CONFIGURATION
 # --------------------------
 
 st.sidebar.title("🔑 Gemini API Configuration")
-user_api_key = st.sidebar.text_input("AIzaSyCxzV0CnE70klTY_YPcBDyYyi396TQWWRc", type="password")
+user_api_key = st.sidebar.text_input("Enter your Gemini API Key", type="password")
 
 # Save API key
 if st.sidebar.button("Save API Key"):
@@ -33,6 +33,7 @@ else:
 # 👥 USER AUTHENTICATION LOGIC
 # --------------------------
 
+# (⚠️ For production, use a real database like Firebase or Supabase)
 user_db = {}
 
 def register_user(email, password):
@@ -103,16 +104,13 @@ def employee_page():
     submit3 = st.button("Percentage Match")
 
     input_prompt1 = """
-    You are an experienced Technical Human Resource Manager. Your task is to review the provided resume against the job description. 
-    Please share your professional evaluation on whether the candidate's profile aligns with the role. 
-    Highlight the strengths and weaknesses of the applicant in relation to the specified job requirements.
+    You are an experienced Technical Human Resource Manager. Review the resume against the job description.
+    Highlight strengths and weaknesses and assess alignment with the role.
     """
 
     input_prompt3 = """
-    You are a skilled ATS (Applicant Tracking System) scanner with a deep understanding of data science and ATS functionality. 
-    Your task is to evaluate the resume against the provided job description. 
-    Give me the percentage of match if the resume matches the job description. 
-    First the output should come as percentage, then keywords missing, and last final thoughts.
+    You are an ATS (Applicant Tracking System) expert. Evaluate the resume vs the job description.
+    Give a percentage match, list missing keywords, and share your final thoughts.
     """
 
     if submit1:
@@ -161,9 +159,11 @@ def organization_page():
             Job Location: {job_location}
             Company Name: {company_name}
             Job Summary: {job_summary}
-            
-            Please generate a detailed job description with the provided details. 
-            The JD should include sections on job responsibilities, qualifications, and required skills.
+
+            Generate a detailed job description including:
+            - Responsibilities
+            - Qualifications
+            - Required Skills
             """
             model = genai.GenerativeModel('gemini-pro')
             response = model.generate_content([prompt])
